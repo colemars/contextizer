@@ -11,14 +11,14 @@ import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from rss_digest import logging_config
-from rss_digest.collector.feeds import FeedGroup, fetch_all, load_groups
-from rss_digest.collector.state import SeenStore
-from rss_digest.config import Config, for_group, load as load_config
-from rss_digest.digest.engine import run_digest
-from rss_digest.sinks.base import build_digest_sink, build_item_sink
+from contextizer import logging_config
+from contextizer.collector.feeds import FeedGroup, fetch_all, load_groups
+from contextizer.collector.state import SeenStore
+from contextizer.config import Config, for_group, load as load_config
+from contextizer.digest.engine import run_digest
+from contextizer.sinks.base import build_digest_sink, build_item_sink
 
-log = logging.getLogger("rss_digest")
+log = logging.getLogger("contextizer")
 
 
 def cmd_collect(cfg: Config, args: argparse.Namespace) -> int:
@@ -198,7 +198,7 @@ def _init_profile(cfg: Config) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="rss-digest", description="Collect RSS items and digest them.")
+    p = argparse.ArgumentParser(prog="contextizer", description="Collect RSS items and digest them.")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     pc = sub.add_parser("collect", help="Fetch feeds and write new items to the configured sink.")

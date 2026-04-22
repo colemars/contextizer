@@ -11,14 +11,14 @@ fi
 PY=.venv/bin/python
 
 echo "==> Byte-compile"
-$PY -m compileall -q rss_digest main.py
+$PY -m compileall -q contextizer main.py
 
 echo "==> Module imports"
 $PY -c "
-from rss_digest import config, logging_config, models
-from rss_digest.collector import feeds, normalize, state
-from rss_digest.digest import engine, profile, prompts, relevance, sources, summarizer
-from rss_digest.sinks import base, directory, jsonl, markdown, slack, stdout
+from contextizer import config, logging_config, models
+from contextizer.collector import feeds, normalize, state
+from contextizer.digest import engine, profile, prompts, relevance, sources, summarizer
+from contextizer.sinks import base, directory, jsonl, markdown, slack, stdout
 "
 
 echo "==> CLI help"
@@ -33,8 +33,8 @@ $PY main.py onboard --print-template > /dev/null
 echo "==> feeds.json parses cleanly"
 $PY -c "
 from pathlib import Path
-from rss_digest.config import load
-from rss_digest.collector.feeds import load_groups
+from contextizer.config import load
+from contextizer.collector.feeds import load_groups
 cfg = load(Path('.'))
 groups = load_groups(cfg.feeds_file)
 assert groups, 'no groups loaded'

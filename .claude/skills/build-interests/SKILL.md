@@ -5,7 +5,7 @@ description: Build or refine an interests JSON file that drives RSS digest relev
 
 # build-interests
 
-Create or refine the structured interests file that `rss_digest/digest/relevance.py` uses to pre-filter and score items.
+Create or refine the structured interests file that `contextizer/digest/relevance.py` uses to pre-filter and score items.
 
 ## Files
 

@@ -15,7 +15,7 @@ from .normalize import to_item
 
 log = logging.getLogger(__name__)
 
-_USER_AGENT = "rss-digest/0.1 (+https://github.com/)"
+_USER_AGENT = "contextizer/0.1 (+https://github.com/)"
 _CONNECT_TIMEOUT = 10
 _READ_TIMEOUT = 30
 

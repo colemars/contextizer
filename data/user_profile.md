@@ -1,7 +1,7 @@
 # User Profile
 
 ## Current projects
-- **feeder** — local RSS collector + personalized daily digest pipeline (this repo).
+- **contextizer** — local RSS collector + personalized daily digest pipeline (this repo).
 - **portal** — Two Boxes 3PL portal work.
 - **deep-pillow** — MTG engine side project.
 

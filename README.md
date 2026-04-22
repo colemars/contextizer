@@ -1,4 +1,4 @@
-# feeder — RSS collector + personalized daily digest
+# contextizer — RSS collector + personalized daily digest
 
 A small, local Python pipeline in two stages:
 
@@ -10,7 +10,7 @@ Designed to run locally today and host later via cron / systemd / a small contai
 ## Install
 
 ```bash
-cd feeder
+cd contextizer
 script/setup
 ```
 
@@ -138,7 +138,7 @@ Feeds occasionally return non-English posts (e.g. dev.to has heavy Portuguese + 
 File layout:
 
 ```
-rss_digest/
+contextizer/
 ├── collector/  # feeds.py, normalize.py, state.py
 ├── digest/     # engine.py, profile.py, relevance.py, sources.py, prompts.py, summarizer.py
 └── sinks/      # base.py, jsonl.py, directory.py, markdown.py, stdout.py, slack.py
@@ -152,13 +152,13 @@ A simple cron sketch:
 
 ```cron
 # every 30 min: collect all groups
-*/30 * * * * cd /path/to/feeder && .venv/bin/python main.py collect --once >> logs/collect.log 2>&1
+*/30 * * * * cd /path/to/contextizer && .venv/bin/python main.py collect --once >> logs/collect.log 2>&1
 
 # daily at 08:00: AI digest (last 24h)
-0 8 * * * cd /path/to/feeder && .venv/bin/python main.py digest --today --group ai >> logs/digest.log 2>&1
+0 8 * * * cd /path/to/contextizer && .venv/bin/python main.py digest --today --group ai >> logs/digest.log 2>&1
 
 # Fridays at 17:00: weekly general digest
-0 17 * * 5 cd /path/to/feeder && .venv/bin/python main.py digest --since 7d --group general >> logs/digest.log 2>&1
+0 17 * * 5 cd /path/to/contextizer && .venv/bin/python main.py digest --since 7d --group general >> logs/digest.log 2>&1
 ```
 
 ## Notes / limitations
