@@ -1,0 +1,28 @@
+# User Profile
+
+<!--
+This file tells the LLM summarizer who you are, so the daily brief can be written
+for you rather than for nobody in particular. `script/setup` copies this file to
+`data/user_profile.md` on first run. Edit it there — the real file is gitignored.
+
+Keep it short and concrete. Bullet points work better than paragraphs.
+-->
+
+## Current projects
+- **project-a** — short description of what it is and why you care about news on it.
+- **project-b** — another one.
+
+## Priority topics
+- Topic you want surfaced whenever it shows up
+- Another recurring interest
+- A field you're learning about
+
+## Tools I use
+- Languages and frameworks in your daily stack
+- Editors, CLIs, services you rely on
+
+## Deprioritize
+- Topics you want filtered out ("celebrity tech news", "crypto", etc.)
+
+## Surface daily
+- Specific things the brief should never miss (e.g. "new releases of library X")

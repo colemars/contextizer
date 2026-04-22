@@ -17,6 +17,11 @@ data/digests/
 data/seen_items/
 data/seen_items.json
 
+# Personal config — each install has its own; .example versions are tracked.
+data/user_profile.md
+data/interests.json
+data/interests_frontend.json
+
 # Logs
 logs/
 *.log

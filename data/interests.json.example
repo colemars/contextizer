@@ -1,0 +1,20 @@
+{
+  "priority_topics": [
+    "open source",
+    "developer tools",
+    "LLM",
+    "Python"
+  ],
+  "priority_domains": [
+    "arxiv.org"
+  ],
+  "deprioritize": [
+    "crypto",
+    "NFT",
+    "web3"
+  ],
+  "tools": [
+    "Python",
+    "TypeScript"
+  ]
+}

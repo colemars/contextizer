@@ -1,0 +1,26 @@
+{
+  "priority_topics": [
+    "React",
+    "TypeScript",
+    "CSS",
+    "web performance",
+    "accessibility",
+    "web standards"
+  ],
+  "priority_domains": [
+    "developer.mozilla.org",
+    "react.dev",
+    "web.dev"
+  ],
+  "deprioritize": [
+    "crypto",
+    "NFT",
+    "web3"
+  ],
+  "tools": [
+    "React",
+    "TypeScript",
+    "Next.js",
+    "Vite"
+  ]
+}
