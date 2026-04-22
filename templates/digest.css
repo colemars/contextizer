@@ -1,0 +1,280 @@
+/* contextizer digest stylesheet — magazine-style. Edit freely. */
+
+:root {
+  --fg: #1a1a1a;
+  --fg-muted: #555;
+  --fg-subtle: #888;
+  --bg: #fbfaf7;
+  --accent: #b94a2e;
+  --rule: #e4e0d8;
+  --quote-bg: #f5f2ea;
+  --content-width: 680px;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+article {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 48px 24px 96px;
+}
+
+.banner {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin: 0 0 40px;
+}
+
+/* --- headings --- */
+h1, h2, h3, h4 {
+  font-family: var(--serif);
+  color: var(--fg);
+  line-height: 1.2;
+  margin-top: 1.8em;
+  margin-bottom: 0.4em;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: 2.4rem;
+  margin-top: 0;
+  margin-bottom: 0.1em;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: 1.6rem;
+  border-top: 1px solid var(--rule);
+  padding-top: 1.2em;
+  margin-top: 2.4em;
+}
+
+h3 {
+  font-size: 1.1rem;
+  font-style: italic;
+  font-weight: normal;
+  color: var(--fg-muted);
+  margin-top: 0;
+  margin-bottom: 1.6em;
+}
+
+/* --- body text --- */
+p {
+  margin: 0 0 1.1em;
+}
+
+p a, li a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(185, 74, 46, 0.3);
+  transition: border-color 0.15s;
+}
+
+p a:hover, li a:hover {
+  border-bottom-color: var(--accent);
+}
+
+/* --- first-blockquote-after-h3 gets the "meta subtitle" treatment --- */
+h3 + blockquote {
+  border-left: none;
+  background: transparent;
+  padding: 0 0 1.2em;
+  margin: 0 0 2.4em;
+  font-style: normal;
+  font-family: var(--sans);
+  color: var(--fg-subtle);
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+h3 + blockquote p {
+  margin: 0;
+}
+
+/* --- TL;DR and other body blockquotes --- */
+blockquote {
+  border-left: 3px solid var(--accent);
+  background: var(--quote-bg);
+  padding: 16px 20px;
+  margin: 1.6em 0;
+  border-radius: 0 4px 4px 0;
+  font-size: 1.05rem;
+}
+
+blockquote p { margin: 0; }
+blockquote strong { color: var(--accent); }
+
+/* --- misc --- */
+hr {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: 2.4em 0;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  background: var(--quote-bg);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+pre {
+  background: var(--quote-bg);
+  padding: 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+pre code {
+  background: transparent;
+  padding: 0;
+}
+
+ul, ol {
+  padding-left: 1.4em;
+  margin: 0 0 1.1em;
+}
+
+li { margin-bottom: 0.4em; }
+
+img { max-width: 100%; height: auto; }
+
+/* "hero link" lines — one bare URL per section, promoted to a small card */
+p.hero {
+  margin: 1.2em 0 0;
+}
+
+p.hero a {
+  display: inline-block;
+  padding: 10px 16px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--fg-muted);
+  font-size: 0.88rem;
+  font-family: var(--mono);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+p.hero a:hover {
+  border-color: var(--accent);
+  background: var(--quote-bg);
+  color: var(--fg);
+}
+
+/* --- runners-up section (compact list of more items) --- */
+details.runners-up {
+  margin-top: 2em;
+  padding-top: 1em;
+}
+
+details.runners-up summary {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  cursor: pointer;
+  list-style: none;
+  padding: 0.6em 0;
+  color: var(--fg);
+  user-select: none;
+}
+
+details.runners-up summary::-webkit-details-marker { display: none; }
+
+details.runners-up summary::before {
+  content: "▸ ";
+  color: var(--fg-subtle);
+  margin-right: 0.3em;
+  display: inline-block;
+  transition: transform 0.15s;
+}
+
+details.runners-up[open] summary::before { content: "▾ "; }
+
+details.runners-up ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 0.8em;
+  border-top: 1px solid var(--rule);
+}
+
+details.runners-up li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+details.runners-up li a {
+  font-weight: 500;
+}
+
+details.runners-up em {
+  color: var(--fg-subtle);
+  font-style: normal;
+  font-size: 0.85rem;
+}
+
+details.runners-up code {
+  font-size: 0.78rem;
+  padding: 1px 5px;
+  color: var(--fg-muted);
+  background: var(--quote-bg);
+}
+
+/* --- footer / metadata --- */
+.footer {
+  margin-top: 4em;
+  padding-top: 1.6em;
+  border-top: 1px solid var(--rule);
+  font-size: 0.85rem;
+  color: var(--fg-subtle);
+}
+
+/* --- print --- */
+@media print {
+  body { background: white; font-size: 11pt; }
+  article { max-width: none; padding: 0; }
+  .banner { max-height: 180px; }
+  a { color: var(--fg); border-bottom: none; }
+  h2 { page-break-after: avoid; }
+}
+
+/* --- dark mode respect --- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fg: #e8e6e1;
+    --fg-muted: #b0ada4;
+    --fg-subtle: #888580;
+    --bg: #1a1a18;
+    --rule: #332f28;
+    --quote-bg: #252219;
+    --accent: #e08868;
+  }
+  code, pre, blockquote { background: #24221d; }
+  p.hero a {
+    background: #252219;
+  }
+}

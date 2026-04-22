@@ -28,6 +28,11 @@ class Config:
     log_level: str
     max_items_for_digest: int
     filter_non_english: bool
+    slack_bot_token: str | None
+    slack_canvas_notify_channel: str | None
+    digest_css_file: Path
+    digest_banner_url: str | None
+    runners_up_count: int
 
 
 def load(project_root: Path | None = None) -> Config:
@@ -57,6 +62,11 @@ def load(project_root: Path | None = None) -> Config:
         log_level=os.environ.get("LOG_LEVEL", "INFO"),
         max_items_for_digest=int(os.environ.get("MAX_ITEMS_FOR_DIGEST", "40")),
         filter_non_english=_bool(os.environ.get("FILTER_NON_ENGLISH"), default=True),
+        slack_bot_token=os.environ.get("SLACK_BOT_TOKEN") or None,
+        slack_canvas_notify_channel=os.environ.get("SLACK_CANVAS_NOTIFY_CHANNEL") or None,
+        digest_css_file=_path(root, "DIGEST_CSS_FILE", "templates/digest.css"),
+        digest_banner_url=os.environ.get("DIGEST_BANNER_URL") or None,
+        runners_up_count=int(os.environ.get("RUNNERS_UP_COUNT", "12")),
     )
 
 

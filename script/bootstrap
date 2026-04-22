@@ -14,4 +14,12 @@ echo "==> Installing Python dependencies"
 .venv/bin/pip install --quiet --upgrade pip
 .venv/bin/pip install --quiet -r requirements.txt
 
+# playwright needs a separate step to fetch the Chromium binary.
+# Only the slack_pdf sink uses it; idempotent if already installed.
+if .venv/bin/python -c "import playwright" 2>/dev/null; then
+  echo "==> Ensuring Chromium is installed for playwright"
+  .venv/bin/playwright install --with-deps=false chromium >/dev/null 2>&1 || \
+    .venv/bin/playwright install chromium
+fi
+
 echo "==> Bootstrap complete"

@@ -18,7 +18,7 @@ $PY -c "
 from contextizer import config, logging_config, models
 from contextizer.collector import feeds, normalize, state
 from contextizer.digest import engine, profile, prompts, relevance, sources, summarizer
-from contextizer.sinks import base, directory, jsonl, markdown, slack, stdout
+from contextizer.sinks import base, directory, html, jsonl, markdown, slack, slack_canvas, slack_file, slack_pdf, stdout
 "
 
 echo "==> CLI help"

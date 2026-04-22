@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 
 from ..config import Config
-from ..models import Digest, DigestSection
+from ..models import Digest, DigestSection, ScoredItem
 from ..sinks.base import DigestSink
 from .filters import filter_english
 from .profile import load_profile
@@ -36,7 +36,8 @@ def run_digest(cfg: Config, sink: DigestSink, since: datetime | None) -> Digest:
     body = summarizer.summarize(scored, profile.text, prompt)
 
     header = _render_header(now, len(scored), len(items))
-    rendered = header + body
+    runners_up = _render_runners_up(scored, cfg.runners_up_count)
+    rendered = header + body + runners_up
 
     digest = Digest(
         generated_at=now,
@@ -50,8 +51,38 @@ def run_digest(cfg: Config, sink: DigestSink, since: datetime | None) -> Digest:
 
 
 def _render_header(now: datetime, kept: int, total: int) -> str:
+    friendly_date = now.strftime("%A, %B %-d, %Y")
+    time_str = now.strftime("%-I:%M %p UTC").lstrip("0")
     return (
-        f"# Daily Digest — {now.strftime('%Y-%m-%d')}\n\n"
-        f"_Generated {now.strftime('%Y-%m-%d %H:%M UTC')} · "
-        f"{kept} of {total} items kept_\n\n"
+        f"# 📰 Daily Digest\n\n"
+        f"### {friendly_date}\n\n"
+        f"> Personalized brief · **{kept}** items curated from **{total:,}** candidates · _generated {time_str}_\n\n"
+        f"---\n\n"
     )
+
+
+RUNNERS_UP_HEADING = "📋 Also in today's feed"
+
+
+def _render_runners_up(scored: list[ScoredItem], limit: int) -> str:
+    if limit <= 0 or not scored:
+        return ""
+    picks = scored[:limit]
+    lines: list[str] = [
+        "",
+        "---",
+        "",
+        f"## {RUNNERS_UP_HEADING}",
+        "",
+    ]
+    for s in picks:
+        item = s.item
+        date_str = item.published.strftime("%Y-%m-%d") if item.published else ""
+        meta = item.source + (f" · {date_str}" if date_str else "")
+        line = f"- [{item.title}]({item.link}) — _{meta}_"
+        topic_matches = [m for m in s.matched_keywords if not m.startswith("domain:")]
+        if topic_matches:
+            line += " · matches " + ", ".join(f"`{m}`" for m in topic_matches[:3])
+        lines.append(line)
+    lines.append("")
+    return "\n".join(lines)
