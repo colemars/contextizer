@@ -110,6 +110,70 @@ All config lives in `.env` (see `.env.example`). Key toggles:
 | `SUMMARIZER` | `stub` (no LLM) or `llm` (pipe to `LLM_COMMAND`) |
 | `LLM_COMMAND` | A shell command that reads the prompt on stdin and prints the digest to stdout. Examples: `claude -p`, `llm -m ...`, `ollama run ...` |
 | `SLACK_WEBHOOK_URL` | Incoming webhook URL; required if any sink is `slack` |
+| `SLACK_BOT_TOKEN` | Bot User OAuth token (`xoxb-…`); required for `slack_canvas`, `slack_file`, `slack_pdf` |
+| `SLACK_CANVAS_NOTIFY_CHANNEL` | Channel for canvas/file posts (e.g. `#ai-feed` or `Cxxxxxxxxxx`) |
+
+## Slack setup
+
+The Slack sinks need different credentials depending on what you're posting. In short:
+
+| Sink | Needs | Delivers as |
+|---|---|---|
+| `slack` | `SLACK_WEBHOOK_URL` | Plain message via Incoming Webhook |
+| `slack_canvas` | `SLACK_BOT_TOKEN` + `SLACK_CANVAS_NOTIFY_CHANNEL` | A Slack Canvas (rich, editable) |
+| `slack_file` | `SLACK_BOT_TOKEN` + `SLACK_CANVAS_NOTIFY_CHANNEL` | HTML file upload |
+| `slack_pdf` | `SLACK_BOT_TOKEN` + `SLACK_CANVAS_NOTIFY_CHANNEL` | Chromium-rendered PDF upload |
+
+If you're only using the basic `slack` sink, skip to step 6 — the webhook setup is much simpler. For any of the `slack_*` sinks you need a bot token and the scopes below.
+
+### 1. Create the Slack app
+
+Go to <https://api.slack.com/apps>, click **Create New App → From scratch**, name it (e.g. "Contextizer"), and pick your workspace.
+
+### 2. Add the scopes you need
+
+Open **OAuth & Permissions** in the sidebar and scroll to **Scopes → Bot Token Scopes**. Add:
+
+- `incoming-webhook` — required for the `slack` sink (the per-item forwarder and the plain digest sink).
+- `canvases:write` + `chat:write` — required for the `slack_canvas` sink.
+- `files:write` + `channels:read` — required for the `slack_file` and `slack_pdf` sinks.
+
+It's fine to add all of them now if you might switch sink types later.
+
+### 3. Install the app to your workspace
+
+Still on **OAuth & Permissions**, click **Install to Workspace** at the top and approve. If you selected `incoming-webhook`, Slack will ask you to pick a channel during this step — pick the one you want the `slack` sink to post to. After install, copy the **Bot User OAuth Token** (starts with `xoxb-`) and the **Webhook URL** (under *Features → Incoming Webhooks* after install) — you'll paste both into `.env` in step 6.
+
+### 4. Reinstall after any scope change
+
+This trips everyone up: if you edit the scopes list *after* installing, Slack silently keeps your old grants until you reinstall. From **OAuth & Permissions**, click **Reinstall to Workspace** and re-approve. Your token doesn't change, but the scopes it carries do.
+
+### 5. Invite the bot to the target channel
+
+In Slack, open the channel you want the digest posted to and run:
+
+```
+/invite @Contextizer
+```
+
+(Substitute whatever you named the app.) The `slack_canvas` / `slack_file` / `slack_pdf` sinks all post on the bot's behalf, so the bot has to be a member of the channel — it won't get a useful error message if it isn't, just a permissions failure.
+
+### 6. Fill in `.env`
+
+```
+# slack sink (webhook only)
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T000/B000/xxxxxxxx
+
+# slack_canvas / slack_file / slack_pdf
+SLACK_BOT_TOKEN=xoxb-...
+SLACK_CANVAS_NOTIFY_CHANNEL=#ai-feed
+```
+
+Then flip the digest over:
+
+```bash
+DIGEST_OUTPUT_TYPE=slack_canvas python main.py digest --today --group ai
+```
 
 ## Narrative mode (LLM summarizer)
 
