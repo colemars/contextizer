@@ -57,6 +57,7 @@ def _render_header(now: datetime, kept: int, total: int) -> str:
         f"# 📰 Daily Digest\n\n"
         f"### {friendly_date}\n\n"
         f"> Personalized brief · **{kept}** items curated from **{total:,}** candidates · _generated {time_str}_\n\n"
+        f"---\n\n"
     )
 
 
