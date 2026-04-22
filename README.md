@@ -1,5 +1,7 @@
 # contextizer — RSS collector + personalized daily digest
 
+![Sample digest](docs/digest-preview.png)
+
 A small, local Python pipeline in two stages:
 
 1. **Collect** — polls RSS feeds, normalizes items, deduplicates, writes them to a configured sink (JSONL by default).
