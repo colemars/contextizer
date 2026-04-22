@@ -1,0 +1,25 @@
+#!/bin/sh
+# script/setup — Set up the project for first-time use.
+set -eu
+cd "$(dirname "$0")/.."
+
+script/bootstrap
+
+if [ ! -f .env ]; then
+  echo "==> Creating .env from .env.example"
+  cp .env.example .env
+else
+  echo "==> .env already present"
+fi
+
+if [ ! -f data/user_profile.md ]; then
+  echo "==> Initializing user profile"
+  .venv/bin/python main.py onboard --init
+else
+  echo "==> data/user_profile.md already present"
+fi
+
+echo "==> Setup complete"
+echo "    Next: script/server                     (poll feeds continuously)"
+echo "      or: .venv/bin/python main.py collect --once"
+echo "      or: .venv/bin/python main.py digest --today --group ai"

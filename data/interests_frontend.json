@@ -1,0 +1,45 @@
+{
+  "priority_topics": [
+    "React",
+    "TypeScript",
+    "JavaScript",
+    "CSS",
+    "web performance",
+    "accessibility",
+    "a11y",
+    "browser",
+    "Next.js",
+    "Vite",
+    "bundler",
+    "animation",
+    "design system",
+    "component",
+    "rendering",
+    "hydration",
+    "server components",
+    "edge",
+    "web standards",
+    "DOM",
+    "WebGPU",
+    "WebAssembly"
+  ],
+  "priority_domains": [
+    "developer.mozilla.org",
+    "web.dev",
+    "react.dev",
+    "nextjs.org",
+    "css-tricks.com",
+    "frontendmasters.com"
+  ],
+  "deprioritize": ["crypto", "NFT", "web3", "blockchain"],
+  "tools": [
+    "React",
+    "Next.js",
+    "TypeScript",
+    "Tailwind",
+    "Vite",
+    "Storybook",
+    "Playwright",
+    "Vitest"
+  ]
+}

@@ -1,0 +1,27 @@
+# Secrets / local config
+.env
+.env.local
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Runtime data — raw items, state, generated digests
+data/raw/
+data/digests/
+data/seen_items/
+data/seen_items.json
+
+# Logs
+logs/
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

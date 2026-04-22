@@ -1,0 +1,46 @@
+#!/bin/sh
+# script/test — Run the test suite. (Smoke tests for now: import + CLI sanity.)
+set -eu
+cd "$(dirname "$0")/.."
+
+if [ ! -d .venv ]; then
+  echo "ERROR: .venv missing. Run script/setup first." >&2
+  exit 1
+fi
+
+PY=.venv/bin/python
+
+echo "==> Byte-compile"
+$PY -m compileall -q rss_digest main.py
+
+echo "==> Module imports"
+$PY -c "
+from rss_digest import config, logging_config, models
+from rss_digest.collector import feeds, normalize, state
+from rss_digest.digest import engine, profile, prompts, relevance, sources, summarizer
+from rss_digest.sinks import base, directory, jsonl, markdown, slack, stdout
+"
+
+echo "==> CLI help"
+$PY main.py --help > /dev/null
+$PY main.py collect --help > /dev/null
+$PY main.py digest --help > /dev/null
+$PY main.py onboard --help > /dev/null
+
+echo "==> Onboarding template prints"
+$PY main.py onboard --print-template > /dev/null
+
+echo "==> feeds.json parses cleanly"
+$PY -c "
+from pathlib import Path
+from rss_digest.config import load
+from rss_digest.collector.feeds import load_groups
+cfg = load(Path('.'))
+groups = load_groups(cfg.feeds_file)
+assert groups, 'no groups loaded'
+for name, g in groups.items():
+    assert g.feeds, f'group {name!r} has no feeds'
+    print(f'  group {name!r}: {len(g.feeds)} feeds')
+"
+
+echo "==> All checks passed"

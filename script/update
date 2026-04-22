@@ -1,0 +1,15 @@
+#!/bin/sh
+# script/update — Update the app to run for its current checkout.
+set -eu
+cd "$(dirname "$0")/.."
+
+if [ ! -d .venv ]; then
+  echo "==> No .venv yet; running bootstrap"
+  exec script/bootstrap
+fi
+
+echo "==> Syncing Python dependencies"
+.venv/bin/pip install --quiet --upgrade pip
+.venv/bin/pip install --quiet -r requirements.txt
+
+echo "==> Update complete"
