@@ -5,19 +5,18 @@
         {"url": "https://openai.com/news/rss.xml", "name": "OpenAI"},
         {"url": "https://huggingface.co/blog/feed.xml", "name": "Hugging Face"},
         {"url": "https://blog.google/technology/ai/rss/", "name": "Google AI"},
-        {"url": "https://venturebeat.com/category/ai/feed/", "name": "VentureBeat AI"},
-        {"url": "https://www.technologyreview.com/topic/artificial-intelligence/feed/", "name": "MIT Tech Review"},
         {"url": "https://arstechnica.com/ai/feed/", "name": "Ars Technica AI"},
-        {"url": "https://tldr.tech/api/rss/ai", "name": "TLDR AI"},
-        {"url": "https://www.marktechpost.com/category/artificial-intelligence/feed/", "name": "MarkTechPost"},
         {"url": "https://importai.substack.com/feed", "name": "Import AI"},
-        {"url": "https://simonwillison.net/atom/everything/", "name": "Simon Willison"},
-        {"url": "https://hnrss.org/newest?q=AI", "name": "HN AI"}
+        {"url": "https://simonwillison.net/atom/everything/", "name": "Simon Willison"}
       ]
     },
     "general": {
       "feeds": [
-        {"url": "https://hnrss.org/frontpage", "name": "HN Front"}
+        {"url": "https://hnrss.org/frontpage", "name": "HN Front"},
+        {"url": "https://feeds.arstechnica.com/arstechnica/index", "name": "Ars Technica"},
+        {"url": "https://www.theverge.com/rss/index.xml", "name": "The Verge"},
+        {"url": "https://www.wired.com/feed/rss", "name": "Wired"},
+        {"url": "https://www.technologyreview.com/feed/", "name": "MIT Technology Review"}
       ]
     },
     "frontend": {
@@ -28,9 +27,7 @@
         {"url": "https://web.dev/feed.xml", "name": "web.dev"},
         {"url": "https://developer.mozilla.org/en-US/blog/rss.xml", "name": "MDN"},
         {"url": "https://react.dev/rss.xml", "name": "React"},
-        {"url": "https://nextjs.org/feed.xml", "name": "Next.js"},
-        {"url": "https://dev.to/feed/tag/frontend", "name": "dev.to FE"},
-        {"url": "https://javascriptweekly.com/rss/", "name": "JavaScript Weekly"}
+        {"url": "https://nextjs.org/feed.xml", "name": "Next.js"}
       ]
     }
   }
