@@ -1,4 +1,10 @@
 {
+  "defaults": {
+    "digest": {
+      "output_type": "slack_pdf",
+      "notify_channel": "#ai-feed"
+    }
+  },
   "groups": {
     "ai": {
       "feeds": [
@@ -29,6 +35,26 @@
         {"url": "https://react.dev/rss.xml", "name": "React"},
         {"url": "https://nextjs.org/feed.xml", "name": "Next.js"}
       ]
+    },
+    "personal-digest": {
+      "feeds": [
+        {"type": "slack", "channel": "C0ATQG87U22"},
+        {"type": "slack", "channel": "C0323Q518Q0"},
+        {"type": "slack", "channel": "C03L0PC8QJW"},
+        {"type": "slack", "channel": "C0532K7LMB7"},
+        {"type": "slack", "channel": "C060QU2JL4W"},
+        {"type": "slack", "channel": "C06KTEPAZ5Y", "filters": {"include_humans": false, "include_bots": true, "include_pattern": "Release Notes"}},
+        {"type": "slack", "channel": "C09Q2F6F21M"},
+        {"type": "slack", "channel": "C0881JH57UZ"},
+        {"type": "slack", "channel": "C075FEVRGLX"}
+      ],
+      "digest": {
+        "output_type": "slack_pdf",
+        "notify_channel": "C0ATQG87U22",
+        "prompt": "templates/newspaper_prompt.md",
+        "css": "templates/newspaper.css",
+        "include_header": false
+      }
     }
   }
 }

@@ -1,0 +1,310 @@
+/* Newspaper preset — "The Daily Token"
+ *
+ * Mock broadsheet layout for the digest PDF. Pair with
+ * templates/newspaper_prompt.md, and set `"include_header": false` on
+ * the group in feeds.json so the pipeline doesn't prepend its own
+ * markdown header above the LLM's content.
+ *
+ * DOM emitted by the prompt:
+ *   <h1>         today's headline
+ *   <h2>         italic deck (one-sentence summary)
+ *   <blockquote> lead paragraph (drop-capped)
+ *   <h2>…</h2>   "Also on the wire" / "The Weather" / "Classifieds"
+ *   <ul>         bullet lists flowed in two columns
+ */
+
+/* NOTE: The PDF is rendered by Playwright with `prefer_css_page_size=false`
+ * and all margins set to 0 — Chrome's own @page rules are ignored. All spacing
+ * is done inside the document with html/body padding. */
+
+:root {
+  --fg: #0e0e0e;
+  --fg-muted: #3d3d3d;
+  --fg-subtle: #7a7a7a;
+  --bg: #f7f3e9;
+  --rule: #0e0e0e;
+  --rule-light: #b8b0a0;
+  --accent: #7c1d1d;
+  --serif-display: "Playfair Display", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --serif-body: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --mono: "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  padding: 0.4in 0.5in 0.6in;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--serif-body);
+  font-size: 11pt;
+  line-height: 1.42;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+article {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* HtmlSink can inject a .banner <img>; this preset doesn't use it. */
+.banner { display: none; }
+
+/* =========================================================================
+ * MASTHEAD — rendered entirely from one pseudo-element on <article>.
+ * One string, `\A` newlines, `white-space: pre-line`. We keep it simple
+ * and monochrome; richer typography would need real markup.
+ * =======================================================================*/
+article::before {
+  content: "The Daily Token";
+  display: block;
+  font-family: var(--serif-display);
+  font-weight: 900;
+  font-style: italic;
+  font-size: 52pt;
+  line-height: 1;
+  text-align: center;
+  color: var(--fg);
+  padding: 0.1in 0 0.04in;
+  border-top: 3px double var(--rule);
+}
+
+article::after {
+  /* Bottom rule for symmetry — kept as a sibling of .footer. */
+  content: "";
+  display: block;
+  border-top: 3px double var(--rule);
+  margin-top: 0.25in;
+}
+
+/* "All the news that's fit to prompt" tagline + top double-rule: we attach
+ * this to the first <h1> via its ::before so it renders between the
+ * nameplate and the headline text. */
+article > h1:first-of-type {
+  font-family: var(--serif-display);
+  font-weight: 900;
+  font-size: 30pt;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-align: center;
+  color: var(--fg);
+  margin: 0.3in 0 0.08in;
+  padding-top: 0;
+  border-top: 0;
+  column-span: all;
+}
+
+article > h1:first-of-type::before {
+  content: "All the news that's fit to prompt";
+  display: block;
+  font-family: var(--serif-body);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 10pt;
+  color: var(--fg-muted);
+  text-align: center;
+  margin-top: 0.02in;
+  margin-bottom: 0.18in;
+  padding-bottom: 0.14in;
+  border-bottom: 1.5pt solid var(--rule);
+}
+
+/* =========================================================================
+ * DECK — the italic one-sentence summary immediately under the headline.
+ * This is the FIRST <h2> in the article (all other h2s are section labels).
+ * =======================================================================*/
+article > h1:first-of-type + h2 {
+  font-family: var(--serif-body);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 13pt;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--fg-muted);
+  margin: 0 0.4in 0.25in;
+  padding: 0;
+  border: 0;
+  column-span: all;
+}
+
+article > h1:first-of-type + h2::after {
+  content: "";
+  display: block;
+  width: 1.6in;
+  border-bottom: 1px solid var(--rule);
+  margin: 0.2in auto 0;
+}
+
+/* =========================================================================
+ * LEAD BLOCKQUOTE — two-column flow, drop cap on the first paragraph.
+ * The byline header is a standalone pseudo on the blockquote, rendered
+ * ABOVE the columns (column-span: all) so it doesn't collide with the
+ * drop cap's ::first-letter target.
+ * =======================================================================*/
+blockquote {
+  margin: 0 0 0.25in;
+  padding: 0;
+  border: 0;
+  font-family: var(--serif-body);
+  font-size: 11pt;
+  line-height: 1.5;
+  color: var(--fg);
+  column-count: 2;
+  column-gap: 0.3in;
+  column-rule: 1px solid var(--rule-light);
+}
+
+blockquote::before {
+  content: "By The Wire · From The Feeds";
+  display: block;
+  font-family: var(--serif-body);
+  font-size: 8.5pt;
+  font-variant: small-caps;
+  letter-spacing: 0.18em;
+  color: var(--fg-muted);
+  text-align: center;
+  padding: 0 0 0.12in;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 0.12in;
+  column-span: all;
+}
+
+blockquote p {
+  margin: 0 0 0.5em;
+  text-align: justify;
+  hyphens: auto;
+}
+
+blockquote p:first-of-type::first-letter {
+  font-family: var(--serif-display);
+  font-weight: 900;
+  float: left;
+  font-size: 3.6em;
+  line-height: 0.86;
+  padding: 0.06em 0.1em 0 0;
+  color: var(--fg);
+}
+
+/* =========================================================================
+ * SECONDARY SECTIONS — every h2 after the deck.
+ * =======================================================================*/
+h2 {
+  font-family: var(--serif-display);
+  font-weight: 900;
+  font-size: 13pt;
+  letter-spacing: -0.005em;
+  text-align: left;
+  margin: 0.8em 0 0.3em;
+  padding: 0.14em 0 0.14em;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule-light);
+  color: var(--fg);
+  column-span: all;
+}
+
+h3 {
+  font-family: var(--serif-display);
+  font-weight: 700;
+  font-size: 11pt;
+  margin: 0.7em 0 0.2em;
+  color: var(--fg);
+}
+
+/* =========================================================================
+ * BODY PARAGRAPHS + LISTS
+ * =======================================================================*/
+p {
+  margin: 0 0 0.5em;
+  text-align: justify;
+  hyphens: auto;
+  orphans: 3;
+  widows: 3;
+}
+
+ul {
+  column-count: 2;
+  column-gap: 0.3in;
+  column-rule: 1px solid var(--rule-light);
+  list-style: none;
+  padding-left: 0;
+  margin: 0.2em 0 0.5em;
+}
+
+ul li {
+  break-inside: avoid;
+  margin: 0 0 0.55em;
+  padding-left: 0.1in;
+  text-indent: -0.1in;
+  line-height: 1.4;
+}
+
+ul li::before {
+  content: "■  ";
+  color: var(--accent);
+  font-size: 0.8em;
+  vertical-align: 0.08em;
+}
+
+ul li strong { font-weight: 700; }
+ul li p { display: inline; margin: 0; }
+
+/* =========================================================================
+ * INLINE ELEMENTS
+ * =======================================================================*/
+a {
+  color: var(--fg);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule-light);
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.05em 0.3em;
+  border-radius: 2px;
+}
+
+strong { font-weight: 700; }
+em { font-style: italic; }
+
+/* Bare URL paragraphs + runners-up: suppressed in newspaper style. */
+.hero-link, details, .runners-up { display: none; }
+
+/* =========================================================================
+ * FOOTER — repurposed as the bottom meta bar.
+ * =======================================================================*/
+.footer {
+  margin-top: 0.3in;
+  padding: 0.1in 0;
+  font-size: 0;                   /* hides the default "Generated by…" text */
+  color: transparent;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.footer::before {
+  content: "VOL. I · NO. 1";
+}
+.footer::after {
+  content: "HALLUCINATION-FREE EDITION · $0.00";
+}
+
+.footer::before, .footer::after {
+  color: var(--fg-muted);
+  font-family: var(--serif-body);
+  font-size: 8.5pt;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

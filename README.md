@@ -1,10 +1,10 @@
-# contextizer — RSS collector + personalized daily digest
+# contextizer — source collector + personalized daily digest
 
 ![Sample digest](docs/digest-preview.png)
 
 A small, local Python pipeline in two stages:
 
-1. **Collect** — polls RSS feeds, normalizes items, deduplicates, writes them to a configured sink (JSONL by default).
+1. **Collect** — pulls from configured sources (RSS feeds, Slack channels), normalizes items, deduplicates, writes them to a configured sink (JSONL by default).
 2. **Digest** — reads collected items, filters them against your personal profile, and emits a human-readable markdown brief (stub summarizer by default; any CLI-based LLM works as a drop-in).
 
 Designed to run locally today and host later via cron / systemd / a small container.
@@ -36,6 +36,7 @@ This project follows the [Scripts to Rule Them All](https://github.blog/engineer
 | `script/setup` | First-time setup: bootstrap + `.env` + skeleton profile. |
 | `script/update` | Sync dependencies after pulling. |
 | `script/server` | Run the continuous collect loop (`collect --loop`). |
+| `script/digest` | Generate a digest for a group (defaults to `--today`). |
 | `script/test` | Smoke tests: byte-compile, imports, CLI help, feeds.json parse. |
 
 ## Usage
@@ -60,12 +61,12 @@ Polls every `POLL_INTERVAL_MINUTES` (default 30). Ctrl-C stops cleanly.
 ### Generate a digest
 
 ```bash
-python main.py digest --today --group ai           # last 24h
-python main.py digest --since 3d --group general   # last 3 days
-python main.py digest --input data/raw/ai.jsonl    # explicit file
+script/digest ai                    # last 24h for group "ai"
+script/digest general --since 3d    # last 3 days
+script/digest ai --input data/raw/ai.jsonl
 ```
 
-If only one group is defined, `--group` can be omitted. Writes to `data/digests/{group}/YYYY-MM-DD.md` by default. Override destination via `DIGEST_OUTPUT_TYPE` (`markdown`, `stdout`, `slack`).
+`script/digest` requires a group name and defaults to `--today` when no window is given. It's a thin wrapper over `python main.py digest` — fall back to the raw form if you need it. Writes to `data/digests/{group}/YYYY-MM-DD.md` by default. Override destination via `DIGEST_OUTPUT_TYPE` (`markdown`, `stdout`, `slack`).
 
 ### Feed groups
 
@@ -88,6 +89,100 @@ If only one group is defined, `--group` can be omitted. Writes to `data/digests/
 
 `profile` / `interests` per-group are optional overrides — omit them to use the defaults from `.env`. The flat shape (`{"feeds": [...]}`) still works and is treated as a single `default` group.
 
+### Digest target (workspace default + per-group override)
+
+Digest output type and the Slack notify channel are configured in `data/feeds.json`. Set a workspace-wide default under `defaults.digest`, override per group under `groups.<name>.digest`:
+
+```json
+{
+  "defaults": {
+    "digest": {
+      "output_type": "slack_pdf",
+      "notify_channel": "#ai-feed"
+    }
+  },
+  "groups": {
+    "ai": { "feeds": [...] },
+    "personal-digest": {
+      "feeds": [...],
+      "digest": {
+        "output_type": "slack_canvas",
+        "notify_channel": "C0ATQG87U22"
+      }
+    }
+  }
+}
+```
+
+- `output_type` — any of `markdown`, `html`, `stdout`, `slack`, `slack_canvas`, `slack_file`, `slack_pdf`. Falls back to `markdown` if neither default nor per-group is set.
+- `notify_channel` — routes the `slack_canvas` / `slack_file` / `slack_pdf` sinks. Pass a channel ID (`C…`, `G…`), DM channel ID (`D…`), or user ID (`U…`, needs the `im:write` scope) to DM yourself.
+- `prompt` — path to a markdown file with the LLM prompt template. Defaults to `templates/digest_prompt.md`. Swap to style the digest's *voice* (e.g. `templates/newspaper_prompt.md` for mock-broadsheet prose).
+- `css` — path to the stylesheet used by the HTML / `slack_file` / `slack_pdf` sinks. Defaults to `templates/digest.css`. Pair with a matching prompt to get a cohesive look (see the `newspaper` preset).
+
+Both the `defaults` block and the per-group `digest` block are optional. Per-group wins when both specify the same key.
+
+### Style presets
+
+Two paired prompt+CSS presets ship in `templates/`:
+
+| Preset | Prompt | CSS | Vibe |
+|---|---|---|---|
+| magazine (default) | `digest_prompt.md` | `digest.css` | Tight newsletter brief with TL;DR + 3–6 emoji-headed topic paragraphs. |
+| newspaper | `newspaper_prompt.md` | `newspaper.css` | Mock broadsheet — "The Daily Token," drop-capped lead, two-column spread, weather + classifieds. |
+
+To switch a group to the newspaper preset, point its `digest.prompt` and `digest.css` at both files together — swapping one without the other reads badly. Copy either pair as a starting point for your own style.
+
+### Sources beyond RSS
+
+The `feeds` array inside a group accepts a couple of shapes. A string or `{"url": "..."}` entry is an RSS feed (default). A tagged entry with `"type"` selects a different source type. Today:
+
+```json
+{
+  "groups": {
+    "eng": {
+      "feeds": [
+        {"url": "https://react.dev/rss.xml", "name": "React"},
+        {"type": "slack", "channel": "C0123456789", "name": "Slack #eng-announce"}
+      ]
+    }
+  }
+}
+```
+
+Slack source options:
+
+| Key | Default | Purpose |
+|---|---|---|
+| `type` | — | Must be `"slack"`. |
+| `channel` | — | Channel **ID** (e.g. `C0123456789`). Right-click the channel in Slack → *Copy link* and grab the trailing `C…`. Channel names (`#eng-announce`) are not accepted — the ID is stable, names aren't. |
+| `name` | `Slack #<channel-name>` | Display label used as `Item.source` and shown in the digest. Resolved from Slack if omitted. |
+| `include_threads` | `true` | When true, replies on a top-level message are folded into that Item's summary. |
+| `lookback_hours` | `24` | How far back to scan on each collect. Extra belt-and-suspenders alongside dedup. |
+| `filters` | `{}` | Optional per-channel content filters. See below. |
+
+`filters` is a nested object with these optional keys:
+
+| Key | Default | Purpose |
+|---|---|---|
+| `include_humans` | `true` | Drop messages authored by humans when `false`. |
+| `include_bots` | `false` | Keep messages authored by bots (modern apps set `bot_id`; classic webhooks use `subtype: bot_message`). |
+| `min_chars` | `0` | Drop messages whose raw text is shorter than this. |
+| `include_pattern` | — | Regex; if set, only include messages whose text matches. |
+
+Use-case example — a releases channel where humans post one-line deploy pings (`-> stg`, `-> prod`) but a release bot posts full notes:
+
+```json
+{"type": "slack", "channel": "C06KTEPAZ5Y", "filters": {
+  "include_humans": false,
+  "include_bots": true,
+  "include_pattern": "Release Notes"
+}}
+```
+
+Slack channel sources need `SLACK_BOT_TOKEN` set and the bot invited to each channel (`/invite @your-bot`). Required scopes beyond the sink ones: `channels:history`, `channels:read`, `users:read` (public), plus `groups:history` + `groups:read` (private). If `SLACK_BOT_TOKEN` isn't set, any `type: slack` entry is skipped with a warning — RSS still runs.
+
+> **Privacy callout.** Anything a Slack channel source reads flows into LLM prompts and may be re-published by whichever `DIGEST_OUTPUT_TYPE` is configured — Markdown files on disk, HTML, another Slack channel via Canvas/File, etc. Only add channels whose content you're comfortable routing through those destinations. Private channels in particular need deliberate opt-in and the `groups:*` scopes.
+
 ### Set up your profile
 
 ```bash
@@ -108,12 +203,12 @@ All config lives in `.env` (see `.env.example`). Key toggles:
 | Env var | What it does |
 |---|---|
 | `RAW_OUTPUT_TYPE` | Where collected items go: `jsonl`, `directory`, `stdout`, `slack` |
-| `DIGEST_OUTPUT_TYPE` | Where the digest goes: `markdown`, `stdout`, `slack` |
 | `SUMMARIZER` | `stub` (no LLM) or `llm` (pipe to `LLM_COMMAND`) |
 | `LLM_COMMAND` | A shell command that reads the prompt on stdin and prints the digest to stdout. Examples: `claude -p`, `llm -m ...`, `ollama run ...` |
 | `SLACK_WEBHOOK_URL` | Incoming webhook URL; required if any sink is `slack` |
-| `SLACK_BOT_TOKEN` | Bot User OAuth token (`xoxb-…`); required for `slack_canvas`, `slack_file`, `slack_pdf` |
-| `SLACK_CANVAS_NOTIFY_CHANNEL` | Channel for canvas/file posts (e.g. `#ai-feed` or `Cxxxxxxxxxx`) |
+| `SLACK_BOT_TOKEN` | Bot User OAuth token (`xoxb-…`); required for `slack_canvas`, `slack_file`, `slack_pdf` sinks AND for `type: slack` sources |
+
+Digest output type and the Slack notify channel used to live here as `DIGEST_OUTPUT_TYPE` / `SLACK_CANVAS_NOTIFY_CHANNEL`. They moved to `data/feeds.json` — see **Per-group digest target** below.
 
 ## Slack setup
 
@@ -139,6 +234,7 @@ Open **OAuth & Permissions** in the sidebar and scroll to **Scopes → Bot Token
 - `incoming-webhook` — required for the `slack` sink (the per-item forwarder and the plain digest sink).
 - `canvases:write` + `chat:write` — required for the `slack_canvas` sink.
 - `files:write` + `channels:read` — required for the `slack_file` and `slack_pdf` sinks.
+- `channels:history` + `users:read` (+ `groups:history`, `groups:read` for private channels) — required if you use any `type: slack` source entries in `data/feeds.json`.
 
 It's fine to add all of them now if you might switch sink types later.
 
@@ -196,8 +292,8 @@ Feeds occasionally return non-English posts (e.g. dev.to has heavy Portuguese + 
 ## Architecture
 
 - **Two CLI entrypoints, one codebase.** `collect` and `digest` run on independent cadences.
-- **Local JSONL is the source of truth.** Slack is a terminal surface (per-item forwarder OR digest publisher), never a datastore.
-- **Pluggable sinks** via narrow `ItemSink` / `DigestSink` protocols. Adding a new destination is one file + one factory line.
+- **Local JSONL is the source of truth.** Slack sinks are terminal surfaces (per-item forwarder OR digest publisher), never datastores.
+- **Pluggable sources and sinks** via narrow `Source` / `ItemSink` / `DigestSink` protocols. Adding a new input (Slack channel, GitHub notifications, …) or a new output destination is one file + one factory line.
 - **Pre-filter before LLM.** The relevance scorer bounds token usage and keeps the stub summarizer useful on day one.
 - **Minimal deps:** `feedparser`, `requests`, `python-dotenv`.
 
@@ -205,7 +301,7 @@ File layout:
 
 ```
 contextizer/
-├── collector/  # feeds.py, normalize.py, state.py
+├── collector/  # feeds.py (Source protocol + RSS), slack.py (Slack source), normalize.py, state.py
 ├── digest/     # engine.py, profile.py, relevance.py, sources.py, prompts.py, summarizer.py
 └── sinks/      # base.py, jsonl.py, directory.py, markdown.py, stdout.py, slack.py
 templates/      # onboarding_prompt.md, digest_prompt.md

@@ -16,7 +16,7 @@ $PY -m compileall -q contextizer main.py
 echo "==> Module imports"
 $PY -c "
 from contextizer import config, logging_config, models
-from contextizer.collector import feeds, normalize, state
+from contextizer.collector import feeds, normalize, slack as collector_slack, state
 from contextizer.digest import engine, profile, prompts, relevance, sources, summarizer
 from contextizer.sinks import base, directory, html, jsonl, markdown, slack, slack_canvas, slack_file, slack_pdf, stdout
 "
@@ -39,8 +39,11 @@ cfg = load(Path('.'))
 groups = load_groups(cfg.feeds_file)
 assert groups, 'no groups loaded'
 for name, g in groups.items():
-    assert g.feeds, f'group {name!r} has no feeds'
-    print(f'  group {name!r}: {len(g.feeds)} feeds')
+    assert g.sources, f'group {name!r} has no sources'
+    print(f'  group {name!r}: {len(g.sources)} sources')
 "
+
+echo "==> Unit tests"
+$PY -m unittest discover -s tests -v
 
 echo "==> All checks passed"

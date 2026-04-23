@@ -11,14 +11,28 @@ from .profile import load_profile
 from .prompts import render_digest_prompt
 from .relevance import score_items
 from .sources import load_items
+from .state import DigestedStore
 from .summarizer import build_summarizer
 
 log = logging.getLogger(__name__)
 
 
-def run_digest(cfg: Config, sink: DigestSink, since: datetime | None) -> Digest:
+def run_digest(
+    cfg: Config,
+    sink: DigestSink,
+    since: datetime | None,
+    *,
+    unseen_only: bool = False,
+) -> Digest:
     items = load_items(cfg.raw_input_type, cfg.raw_input_path, since)
     log.info("Loaded %d items since %s", len(items), since)
+
+    digested = DigestedStore(cfg.digested_state_file) if unseen_only else None
+    if digested is not None:
+        before = len(items)
+        items = [i for i in items if not digested.contains(i)]
+        log.info("Unseen filter: kept %d of %d items (%d previously digested)",
+                 len(items), before, len(digested))
 
     if cfg.filter_non_english:
         before = len(items)
@@ -35,7 +49,7 @@ def run_digest(cfg: Config, sink: DigestSink, since: datetime | None) -> Digest:
     summarizer = build_summarizer(cfg.summarizer, cfg.llm_command)
     body = summarizer.summarize(scored, profile.text, prompt)
 
-    header = _render_header(now, len(scored), len(items))
+    header = _render_header(now, len(scored), len(items)) if cfg.digest_include_header else ""
     runners_up = _render_runners_up(scored, cfg.runners_up_count)
     rendered = header + body + runners_up
 
@@ -47,6 +61,12 @@ def run_digest(cfg: Config, sink: DigestSink, since: datetime | None) -> Digest:
     )
     sink.write_digest(digest)
     sink.close()
+
+    if digested is not None:
+        for s in scored:
+            digested.add(s.item)
+        digested.save()
+
     return digest
 
 

@@ -22,7 +22,7 @@ log = logging.getLogger("contextizer")
 
 
 def cmd_collect(cfg: Config, args: argparse.Namespace) -> int:
-    groups = load_groups(cfg.feeds_file)
+    groups = load_groups(cfg.feeds_file, cfg.project_root)
     targets = _select_groups(groups, args.group)
 
     if args.loop:
@@ -35,20 +35,30 @@ def cmd_collect(cfg: Config, args: argparse.Namespace) -> int:
 def _collect_all(cfg: Config, groups: dict[str, FeedGroup]) -> int:
     total_new = 0
     for name, group in groups.items():
-        log.info("=== collecting group %r (%d feeds) ===", name, len(group.feeds))
+        log.info("=== collecting group %r (%d sources) ===", name, len(group.sources))
         total_new += _collect_group(cfg, group)
     return total_new
 
 
 def _collect_group(cfg: Config, group: FeedGroup) -> int:
-    gcfg = for_group(cfg, group.name, group.profile_file, group.interests_file)
+    gcfg = for_group(
+        cfg,
+        group.name,
+        group.profile_file,
+        group.interests_file,
+        group.digest_output_type,
+        group.slack_notify_channel,
+        group.digest_prompt_file,
+        group.digest_css_file,
+        group.digest_include_header,
+    )
     seen = SeenStore(gcfg.state_file)
     sink = build_item_sink(gcfg.raw_output_type, gcfg)
 
     new_count = 0
     total = 0
     try:
-        for item in fetch_all(group.feeds):
+        for item in fetch_all(group.sources):
             total += 1
             if seen.contains(item):
                 continue
@@ -89,16 +99,33 @@ def _run_loop(cfg: Config, groups: dict[str, FeedGroup]) -> None:
 
 
 def cmd_digest(cfg: Config, args: argparse.Namespace) -> int:
-    groups = load_groups(cfg.feeds_file)
+    groups = load_groups(cfg.feeds_file, cfg.project_root)
     name = _require_single_group(groups, args.group)
     group = groups[name]
 
-    gcfg = for_group(cfg, name, group.profile_file, group.interests_file)
+    gcfg = for_group(
+        cfg,
+        name,
+        group.profile_file,
+        group.interests_file,
+        group.digest_output_type,
+        group.slack_notify_channel,
+        group.digest_prompt_file,
+        group.digest_css_file,
+        group.digest_include_header,
+    )
     gcfg = _apply_input_override(gcfg, args)
+    log.info(
+        "Digest config for %r: output_type=%s prompt=%s css=%s",
+        name,
+        gcfg.digest_output_type,
+        gcfg.digest_prompt_file.name,
+        gcfg.digest_css_file.name,
+    )
 
     since = _parse_since(args)
     sink = build_digest_sink(gcfg.digest_output_type, gcfg)
-    digest = run_digest(gcfg, sink, since)
+    digest = run_digest(gcfg, sink, since, unseen_only=args.unseen)
     log.info("Digest for group %r written with %d items", name, digest.item_count)
     return 0
 
@@ -207,10 +234,12 @@ def build_parser() -> argparse.ArgumentParser:
     pc.add_argument("--group", help="Collect a single group (default: all groups).")
 
     pd = sub.add_parser("digest", help="Generate a digest from collected items.")
-    pd.add_argument("--today", action="store_true", help="Digest the last 24 hours.")
-    pd.add_argument("--since", help="Lookback window, e.g. 48h, 3d, 90m.")
+    pd.add_argument("--today", action="store_true", help="Digest items published in the last 24 hours.")
+    pd.add_argument("--since", help="Lookback window on published date, e.g. 48h, 3d, 90m.")
     pd.add_argument("--input", help="Override raw input path (file=jsonl, dir=directory).")
     pd.add_argument("--group", help="Group to digest (required if multiple groups are defined).")
+    pd.add_argument("--unseen", action="store_true",
+                    help="Exclude items already included in a previous digest, and mark this run's items as digested.")
 
     po = sub.add_parser("onboard", help="Profile/onboarding helpers.")
     po.add_argument("--print-template", action="store_true", help="Print the onboarding prompt.")
