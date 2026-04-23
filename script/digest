@@ -1,0 +1,35 @@
+#!/bin/sh
+# script/digest — Generate a digest. Group is required; time window defaults to --today.
+set -eu
+cd "$(dirname "$0")/.."
+
+if [ ! -d .venv ]; then
+  echo "ERROR: .venv missing. Run script/setup first." >&2
+  exit 1
+fi
+
+usage() {
+  echo "usage: script/digest GROUP [--since 3d | --today | --input PATH]" >&2
+  echo "  GROUP  name of a group in data/feeds.json (required)" >&2
+}
+
+if [ $# -lt 1 ] || [ "${1-}" = "-h" ] || [ "${1-}" = "--help" ]; then
+  usage
+  exit 1
+fi
+
+group=$1
+shift
+
+has_window=0
+for arg in "$@"; do
+  case "$arg" in
+    --today|--since|--since=*|--input|--input=*) has_window=1 ;;
+  esac
+done
+
+if [ "$has_window" -eq 0 ]; then
+  set -- --today "$@"
+fi
+
+exec .venv/bin/python main.py digest --group "$group" "$@"
