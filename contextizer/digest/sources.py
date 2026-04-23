@@ -20,7 +20,9 @@ def load_items(kind: str, path: Path, since: datetime | None = None) -> list[Ite
         raise ValueError(f"Unknown input kind: {kind}")
 
     if since is not None:
-        items = [i for i in items if i.fetched_at >= since]
+        # Window means "published since" — fall back to fetched_at when the feed
+        # didn't supply a published date so items aren't silently dropped.
+        items = [i for i in items if (i.published or i.fetched_at) >= since]
 
     # Deduplicate by id — the raw store may contain duplicates if a user re-ran collection.
     dedup: dict[str, Item] = {}
