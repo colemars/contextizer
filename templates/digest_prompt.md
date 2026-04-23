@@ -16,8 +16,9 @@ Each item has `title`, `link`, `source`, `published`, `summary`, `score`, `match
 
 ## How to write it
 
-- **Open with a TL;DR** — bold the label, then one sentence naming the single most important thing of the day. Example:
-  > **🎯 TL;DR:** _Node.js is shipping the Temporal API by default next week — worth planning your date/time code around._
+- **Open with a TL;DR** — bold the label, then one sentence that synthesizes the *shape of the day* across the whole brief. It should read like the headline of a newsletter issue: what's the throughline, tension, or pattern connecting today's sections? If there's no real throughline, name 2–3 distinct threads in one sentence rather than collapsing to the top item. Write this *after* you've drafted the sections so it reflects all of them, not just the lead. Examples:
+  > **🎯 TL;DR:** _Agent pricing is in flux (Claude Code maybe leaving $20 Pro), MCP keeps eating the integration layer, and a nasty npm supply-chain incident is worth a same-day audit._
+  > **🎯 TL;DR:** _Quiet day — mostly incremental tooling updates, but the Temporal API landing in Node is the one thing worth planning around._
 
 - **Cluster into 3–6 topic paragraphs.** Each section follows this exact shape:
 
