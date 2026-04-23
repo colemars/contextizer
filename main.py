@@ -51,6 +51,8 @@ def _collect_group(cfg: Config, group: FeedGroup) -> int:
         group.digest_prompt_file,
         group.digest_css_file,
         group.digest_include_header,
+        group.digest_extra_instructions,
+        group.digest_sections,
     )
     seen = SeenStore(gcfg.state_file)
     sink = build_item_sink(gcfg.raw_output_type, gcfg)
@@ -113,6 +115,8 @@ def cmd_digest(cfg: Config, args: argparse.Namespace) -> int:
         group.digest_prompt_file,
         group.digest_css_file,
         group.digest_include_header,
+        group.digest_extra_instructions,
+        group.digest_sections,
     )
     gcfg = _apply_input_override(gcfg, args)
     log.info(

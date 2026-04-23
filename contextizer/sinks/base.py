@@ -51,6 +51,9 @@ def build_digest_sink(kind: str, cfg: Config) -> DigestSink:
         return MarkdownSink(cfg.digest_output_path)
     if kind == "html":
         return HtmlSink(cfg.digest_output_path, cfg.digest_css_file, cfg.digest_banner_url)
+    if kind == "pdf":
+        from .pdf import PdfSink
+        return PdfSink(cfg.digest_output_path, cfg.digest_css_file, cfg.digest_banner_url)
     if kind == "stdout":
         return StdoutSink()
     if kind == "slack":

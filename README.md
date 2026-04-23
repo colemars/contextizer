@@ -118,6 +118,8 @@ Digest output type and the Slack notify channel are configured in `data/feeds.js
 - `notify_channel` — routes the `slack_canvas` / `slack_file` / `slack_pdf` sinks. Pass a channel ID (`C…`, `G…`), DM channel ID (`D…`), or user ID (`U…`, needs the `im:write` scope) to DM yourself.
 - `prompt` — path to a markdown file with the LLM prompt template. Defaults to `templates/digest_prompt.md`. Swap to style the digest's *voice* (e.g. `templates/newspaper_prompt.md` for mock-broadsheet prose).
 - `css` — path to the stylesheet used by the HTML / `slack_file` / `slack_pdf` sinks. Defaults to `templates/digest.css`. Pair with a matching prompt to get a cohesive look (see the `newspaper` preset).
+- `extra_instructions` — free-form string (or array of strings joined with `\n`) injected into the base prompt as an "Additional guidance for this group" section. Use it to add rules without forking a whole prompt file: "always include a Research section," "downweight crypto," "keep bullets under 10 words," etc.
+- `include_header` — `false` suppresses the pipeline's injected `# 📰 Daily Digest` + date + meta blockquote. Useful when your preset (e.g. newspaper) controls the top of the document itself.
 
 Both the `defaults` block and the per-group `digest` block are optional. Per-group wins when both specify the same key.
 

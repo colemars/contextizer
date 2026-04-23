@@ -24,8 +24,9 @@ Write in the voice of a restrained, deadpan broadsheet — dry, specific, mildly
 2. `## <DECK>` — a one-sentence deck summarizing the lead story. Italic in the CSS. ~20–30 words. End with a period.
 3. `> <LEAD PARAGRAPH>` — a blockquote containing the lead story's opening paragraph, 3–5 sentences. This is what the drop-cap will render on. Cite the lead item inline as `[Title](link)`. Bare URL-only paragraphs are forbidden in this section.
 4. `## Also on the wire` — 2–4 shorter items as a bulleted list. Each bullet: `**<Verb phrase headline>.**` followed by a 1–2 sentence paragraph. Cite inline `[Title](link)`. Don't reuse the lead item.
-5. `## The Weather` — a single paragraph of 2–3 sentences that sums up the *mood* of today's feed (busy / quiet / stormy / clear) by riffing on a couple of themes. Light touch. No links.
-6. `## Classifieds` — 2–3 one-line "ads" written as a bulleted list, each gently ribbing a real item or source from today's feed. Each bullet is one deadpan line. Optional — skip if nothing's funny. Keep it work-appropriate.
+5. **Any priority sections** from the "Additional guidance" block below (e.g. Releases, Alerts, Threads). Render each in the order it appears in that block, using the shape it specifies. These come after "Also on the wire" but before "The Weather."
+6. `## The Weather` — a single paragraph of 2–3 sentences that sums up the *mood* of today's feed (busy / quiet / stormy / clear) by riffing on a couple of themes. Light touch. No links.
+7. `## Classifieds` — 2–3 one-line "ads" written as a bulleted list, each gently ribbing a real item or source from today's feed. Each bullet is one deadpan line. Optional — skip if nothing's funny. Keep it work-appropriate.
 
 ### Voice rules
 
@@ -43,7 +44,9 @@ Write in the voice of a restrained, deadpan broadsheet — dry, specific, mildly
 - Single blank line between sections.
 - Links inline as `[Title](link)` only. No bare URLs.
 - No tables, no code fences, no horizontal rules.
-- Total length: 350–500 words including headlines.
+- Total length: 350–500 words including headlines (excluding any priority sections from Additional guidance).
+
+{{extra_instructions}}
 
 ## Output
 

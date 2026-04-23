@@ -44,7 +44,14 @@ def run_digest(
     log.info("Scored %d items, keeping top %d", len(items), len(scored))
 
     now = datetime.now(timezone.utc)
-    prompt = render_digest_prompt(cfg.digest_prompt_file, profile.text, scored, now.date())
+    prompt = render_digest_prompt(
+        cfg.digest_prompt_file,
+        profile.text,
+        scored,
+        now.date(),
+        extra_instructions=cfg.digest_extra_instructions,
+        sections=cfg.digest_sections,
+    )
 
     summarizer = build_summarizer(cfg.summarizer, cfg.llm_command)
     body = summarizer.summarize(scored, profile.text, prompt)

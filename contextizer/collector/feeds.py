@@ -57,6 +57,8 @@ class FeedGroup:
     digest_prompt_file: Path | None = None
     digest_css_file: Path | None = None
     digest_include_header: bool | None = None
+    digest_extra_instructions: str | None = None
+    digest_sections: list[dict] | None = None
 
 
 def load_groups(path: Path, root: Path | None = None) -> dict[str, FeedGroup]:
@@ -140,6 +142,21 @@ def _group_from_body(
     include_header = group_digest.get("include_header")
     if include_header is None:
         include_header = defaults_digest.get("include_header")
+    extra_instructions = (
+        group_digest.get("extra_instructions")
+        or defaults_digest.get("extra_instructions")
+    )
+    # Accept arrays for easier multi-line authoring in JSON.
+    if isinstance(extra_instructions, list):
+        extra_instructions = "\n".join(str(x) for x in extra_instructions)
+
+    sections = group_digest.get("sections") or defaults_digest.get("sections")
+    if sections is not None and not isinstance(sections, list):
+        log.warning("Group %r has non-list digest.sections; ignoring", name)
+        sections = None
+    if sections:
+        # Drop entries that aren't dicts so a typo doesn't crash render.
+        sections = [s for s in sections if isinstance(s, dict)]
 
     return FeedGroup(
         name=name,
@@ -151,6 +168,8 @@ def _group_from_body(
         digest_prompt_file=_resolve(root, prompt),
         digest_css_file=_resolve(root, css),
         digest_include_header=None if include_header is None else bool(include_header),
+        digest_extra_instructions=extra_instructions or None,
+        digest_sections=sections or None,
     )
 
 

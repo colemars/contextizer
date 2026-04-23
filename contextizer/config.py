@@ -35,6 +35,8 @@ class Config:
     digest_css_file: Path
     digest_banner_url: str | None
     digest_include_header: bool
+    digest_extra_instructions: str | None
+    digest_sections: list[dict] | None
     runners_up_count: int
 
 
@@ -76,6 +78,8 @@ def load(project_root: Path | None = None) -> Config:
         digest_css_file=_path(root, "DIGEST_CSS_FILE", "templates/digest.css"),
         digest_banner_url=os.environ.get("DIGEST_BANNER_URL") or None,
         digest_include_header=True,  # per-group `digest.include_header: false` disables
+        digest_extra_instructions=None,  # per-group `digest.extra_instructions` fills this
+        digest_sections=None,  # per-group `digest.sections` fills this
         runners_up_count=int(os.environ.get("RUNNERS_UP_COUNT", "12")),
     )
 
@@ -102,6 +106,8 @@ def for_group(
     digest_prompt_override: Path | None = None,
     digest_css_override: Path | None = None,
     digest_include_header_override: bool | None = None,
+    digest_extra_instructions_override: str | None = None,
+    digest_sections_override: list[dict] | None = None,
 ) -> Config:
     """Return a Config with `{group}` substituted in templated paths and any
     per-group overrides applied on top of the global .env values.
@@ -126,6 +132,10 @@ def for_group(
             if digest_include_header_override is None
             else digest_include_header_override
         ),
+        digest_extra_instructions=(
+            digest_extra_instructions_override or cfg.digest_extra_instructions
+        ),
+        digest_sections=digest_sections_override or cfg.digest_sections,
     )
 
 
