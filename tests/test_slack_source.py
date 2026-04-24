@@ -149,6 +149,53 @@ class SlackMessageToItemTests(unittest.TestCase):
         self.assertLessEqual(len(item.summary), 2000)
         self.assertTrue(item.summary.endswith("..."))
 
+    def test_attachments_appended_after_message_cap(self):
+        # Long message + a PDF: message gets capped at 2000, then PDF
+        # appends on top so it doesn't truncate the human body.
+        msg = {"ts": "1.1", "text": "x" * 3000}
+        attachments = [{"name": "report.pdf", "text": "PDF EXTRACT"}]
+        item = slack_message_to_item(
+            msg, [], attachments_text=attachments, **self._base_kwargs()
+        )
+        assert item is not None
+        self.assertIn("[Attached PDF: report.pdf]", item.summary)
+        self.assertIn("PDF EXTRACT", item.summary)
+        # message body still capped, attachment still present
+        self.assertGreater(len(item.summary), 2000)
+
+    def test_attachments_id_includes_file_count(self):
+        msg = {"ts": "100.0", "text": "hello"}
+        no_files = slack_message_to_item(msg, [], **self._base_kwargs())
+        with_files = slack_message_to_item(
+            msg, [],
+            attachments_text=[{"name": "x.pdf", "text": "y"}],
+            **self._base_kwargs(),
+        )
+        assert no_files and with_files
+        self.assertNotEqual(no_files.id, with_files.id)
+
+    def test_attachments_zero_count_id_stable(self):
+        # Empty attachments list should leave the id matching the no-attachments
+        # case (back-compat: existing collected items keep their ids).
+        msg = {"ts": "100.0", "text": "hello"}
+        no_files = slack_message_to_item(msg, [], **self._base_kwargs())
+        empty = slack_message_to_item(
+            msg, [], attachments_text=[], **self._base_kwargs()
+        )
+        assert no_files and empty
+        self.assertEqual(no_files.id, empty.id)
+
+    def test_attachments_only_no_message_text_still_emits_item(self):
+        msg = {"ts": "1.1", "text": ""}
+        item = slack_message_to_item(
+            msg, [],
+            attachments_text=[{"name": "doc.pdf", "text": "important content"}],
+            **self._base_kwargs(),
+        )
+        self.assertIsNotNone(item)
+        assert item is not None
+        self.assertIn("important content", item.summary)
+
 
 class SlackChannelSourceFilteringTests(unittest.TestCase):
     """Exercise the small amount of policy logic that doesn't need HTTP."""
@@ -307,6 +354,62 @@ class SlackSourceConfigParsingTests(unittest.TestCase):
             self.assertEqual(src.channel_ref, "C1")
             self.assertEqual(src.name, "Slack eng-announce")
             self.assertTrue(src._name_explicit)
+        finally:
+            os.environ.pop("SLACK_BOT_TOKEN", None)
+
+    def test_parse_files_default_is_disabled(self):
+        import os
+
+        from contextizer.collector.slack import slack_source_from_config
+
+        os.environ["SLACK_BOT_TOKEN"] = "xoxb-test"
+        try:
+            src = slack_source_from_config({"type": "slack", "channel": "C1"})
+            assert src is not None
+            self.assertFalse(src.parse_files)
+        finally:
+            os.environ.pop("SLACK_BOT_TOKEN", None)
+
+    def test_parse_files_shorthand_true_enables_with_defaults(self):
+        import os
+
+        from contextizer.collector.slack import slack_source_from_config
+
+        os.environ["SLACK_BOT_TOKEN"] = "xoxb-test"
+        try:
+            src = slack_source_from_config(
+                {"type": "slack", "channel": "C1", "parse_files": True}
+            )
+            assert src is not None
+            self.assertTrue(src.parse_files)
+            self.assertEqual(src.max_file_mb, 5.0)
+            self.assertEqual(src.max_files_per_msg, 3)
+            self.assertEqual(src.max_pdf_text_chars, 4000)
+        finally:
+            os.environ.pop("SLACK_BOT_TOKEN", None)
+
+    def test_parse_files_object_overrides_caps(self):
+        import os
+
+        from contextizer.collector.slack import slack_source_from_config
+
+        os.environ["SLACK_BOT_TOKEN"] = "xoxb-test"
+        try:
+            src = slack_source_from_config({
+                "type": "slack",
+                "channel": "C1",
+                "parse_files": {
+                    "enabled": True,
+                    "max_file_mb": 10,
+                    "max_files_per_msg": 1,
+                    "max_text_chars": 8000,
+                },
+            })
+            assert src is not None
+            self.assertTrue(src.parse_files)
+            self.assertEqual(src.max_file_mb, 10.0)
+            self.assertEqual(src.max_files_per_msg, 1)
+            self.assertEqual(src.max_pdf_text_chars, 8000)
         finally:
             os.environ.pop("SLACK_BOT_TOKEN", None)
 

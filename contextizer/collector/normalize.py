@@ -152,9 +152,17 @@ def slack_message_to_item(
     channel_display_name: str,
     permalink: str,
     resolve_user: Callable[[str], str] | None = None,
+    attachments_text: list[dict] | None = None,
 ) -> Item | None:
     """Convert a Slack `conversations.history` message (plus optional thread
-    replies) into an Item. Returns None if the message has no usable content.
+    replies and parsed file attachments) into an Item. Returns None if the
+    message has no usable content.
+
+    `attachments_text` is a list of `{"name": str, "text": str}` dicts produced
+    by the source's PDF extractor. Each is appended to the summary in a
+    labeled block; the message+threads body is bounded by the original 2000-
+    char cap, and attachments add their own headroom on top so a long PDF
+    doesn't truncate the human content.
     """
     ts = msg.get("ts")
     if not ts:
@@ -188,12 +196,28 @@ def slack_message_to_item(
     if len(summary) > _SUMMARY_CAP:
         summary = summary[: _SUMMARY_CAP - 3] + "..."
 
+    # Attachments append AFTER the message-cap so a PDF can't truncate the
+    # human-authored body. Each attachment has its own size cap upstream.
+    file_count = 0
+    if attachments_text:
+        attachment_blocks: list[str] = []
+        for att in attachments_text:
+            name = att.get("name") or "attachment.pdf"
+            text = att.get("text") or ""
+            attachment_blocks.append(f"\n\n[Attached PDF: {name}]\n{text}")
+        summary = summary + "".join(attachment_blocks)
+        file_count = len(attachments_text)
+
     title = _slack_title(body, fallback=f"Slack message {ts}")
+    # Append `::f{count}` only when files were folded in — keeps existing
+    # zero-attachment items stable (no spurious re-emit on upgrade).
     basis = f"slack::{channel_id}::{ts}::r{reply_count}"
+    if file_count > 0:
+        basis += f"::f{file_count}"
     item_id = hashlib.sha1(basis.encode("utf-8")).hexdigest()
     published = _slack_ts_to_dt(ts)
 
-    if not body and not thread_replies:
+    if not body and not thread_replies and not attachments_text:
         # Nothing meaningful to digest.
         return None
 

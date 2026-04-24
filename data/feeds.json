@@ -95,7 +95,7 @@
         {"type": "slack", "channel": "C06KTEPAZ5Y", "filters": {"include_humans": false, "include_bots": true, "include_pattern": "Release Notes"}},
         {"type": "slack", "channel": "C09Q2F6F21M"},
         {"type": "slack", "channel": "C0881JH57UZ"},
-        {"type": "slack", "channel": "C075FEVRGLX"}
+        {"type": "slack", "channel": "C075FEVRGLX", "parse_files": true}
       ],
       "digest": {
         "output_type": "pdf",

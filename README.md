@@ -161,6 +161,7 @@ Slack source options:
 | `include_threads` | `true` | When true, replies on a top-level message are folded into that Item's summary. |
 | `lookback_hours` | `24` | How far back to scan on each collect. Extra belt-and-suspenders alongside dedup. |
 | `filters` | `{}` | Optional per-channel content filters. See below. |
+| `parse_files` | `false` | Download + extract text from PDF attachments and fold into the Item summary. See "PDF parsing" below. |
 
 `filters` is a nested object with these optional keys:
 
@@ -180,6 +181,32 @@ Use-case example — a releases channel where humans post one-line deploy pings 
   "include_pattern": "Release Notes"
 }}
 ```
+
+#### PDF parsing
+
+Setting `parse_files: true` on a Slack source enables PDF attachment extraction. When a message has one or more `.pdf` attachments, each is downloaded via `url_private` (using your existing `SLACK_BOT_TOKEN`), text is extracted via `pypdf`, and folded into the Item's summary as a `[Attached PDF: <name>]` block. The message body's 2000-char cap is preserved — extracted text is appended on top so a long PDF can't truncate the human content.
+
+Shorthand `"parse_files": true` uses defaults; pass an object to tune:
+
+```json
+{"type": "slack", "channel": "C…", "parse_files": {
+  "enabled": true,
+  "max_file_mb": 5,
+  "max_files_per_msg": 3,
+  "max_text_chars": 4000
+}}
+```
+
+| Key | Default | Purpose |
+|---|---|---|
+| `enabled` | `false` | Master toggle. |
+| `max_file_mb` | `5` | Skip files larger than this. |
+| `max_files_per_msg` | `3` | Cap PDFs processed per message. |
+| `max_text_chars` | `4000` | Truncate extracted text to keep summaries reasonable. |
+
+Limitations: image-only / scanned PDFs surface as `[image-only or unreadable PDF — text extraction skipped]` (no OCR). Encrypted PDFs are skipped. Externally-hosted attachments (Google Drive, Dropbox embeds) are ignored — they don't have a `url_private`.
+
+Requires the `files:read` Slack scope (in addition to `channels:history` etc.) plus `pypdf>=4.0` (already in `requirements.txt`).
 
 Slack channel sources need `SLACK_BOT_TOKEN` set and the bot invited to each channel (`/invite @your-bot`). Required scopes beyond the sink ones: `channels:history`, `channels:read`, `users:read` (public), plus `groups:history` + `groups:read` (private). If `SLACK_BOT_TOKEN` isn't set, any `type: slack` entry is skipped with a warning — RSS still runs.
 
@@ -237,6 +264,7 @@ Open **OAuth & Permissions** in the sidebar and scroll to **Scopes → Bot Token
 - `canvases:write` + `chat:write` — required for the `slack_canvas` sink.
 - `files:write` + `channels:read` — required for the `slack_file` and `slack_pdf` sinks.
 - `channels:history` + `users:read` (+ `groups:history`, `groups:read` for private channels) — required if you use any `type: slack` source entries in `data/feeds.json`.
+- `files:read` — required for PDF attachment parsing (`parse_files: true` on any Slack source).
 
 It's fine to add all of them now if you might switch sink types later.
 

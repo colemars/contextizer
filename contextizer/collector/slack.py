@@ -59,6 +59,15 @@ def slack_source_from_config(entry: dict) -> "SlackChannelSource | None":
         log.warning("Slack source %r has non-object `filters`; ignoring", channel)
         filters = {}
 
+    parse_files_cfg = entry.get("parse_files")
+    if parse_files_cfg is True:
+        parse_files_cfg = {"enabled": True}
+    elif parse_files_cfg in (False, None):
+        parse_files_cfg = {}
+    elif not isinstance(parse_files_cfg, dict):
+        log.warning("Slack source %r has malformed `parse_files`; ignoring", channel)
+        parse_files_cfg = {}
+
     return SlackChannelSource(
         name=name or f"Slack {channel}",
         channel_ref=channel,
@@ -69,6 +78,10 @@ def slack_source_from_config(entry: dict) -> "SlackChannelSource | None":
         include_bots=bool(filters.get("include_bots", False)),
         min_chars=int(filters.get("min_chars", 0)),
         include_pattern=filters.get("include_pattern") or None,
+        parse_files=bool(parse_files_cfg.get("enabled", False)),
+        max_file_mb=float(parse_files_cfg.get("max_file_mb", 5)),
+        max_files_per_msg=int(parse_files_cfg.get("max_files_per_msg", 3)),
+        max_pdf_text_chars=int(parse_files_cfg.get("max_text_chars", 4000)),
         _name_explicit=name is not None,
     )
 
@@ -87,6 +100,13 @@ class SlackChannelSource:
     include_bots: bool = False        # if True, keep bot messages (subtype=bot_message or bot_id set)
     min_chars: int = 0                # drop messages whose raw text is shorter
     include_pattern: str | None = None  # optional regex; message text must match
+
+    # PDF attachment parsing. When enabled, downloads PDFs attached to messages
+    # via `url_private`, extracts text with pypdf, folds it into the Item summary.
+    parse_files: bool = False
+    max_file_mb: float = 5.0
+    max_files_per_msg: int = 3
+    max_pdf_text_chars: int = 4000
 
     # Flipped to True when the user supplied `name` in feeds.json; signals we
     # should NOT overwrite it with a "Slack #channel-name" derived default.
@@ -189,6 +209,10 @@ class SlackChannelSource:
             if self.include_threads and int(msg.get("reply_count") or 0) > 0:
                 thread_replies = self._replies(self._channel_id, msg["ts"])
 
+            attachments_text: list[dict] = []
+            if self.parse_files:
+                attachments_text = self._extract_pdf_attachments(msg)
+
             permalink = self._permalink(msg["ts"])
             item = slack_message_to_item(
                 msg,
@@ -197,6 +221,7 @@ class SlackChannelSource:
                 channel_display_name=self._channel_display or self._channel_id,
                 permalink=permalink,
                 resolve_user=self._resolve_user,
+                attachments_text=attachments_text,
             )
             if item is not None:
                 items.append(item)
@@ -402,3 +427,86 @@ class SlackChannelSource:
         elapsed = time.monotonic() - self._last_call_at
         if elapsed < _PACING_SECONDS:
             time.sleep(_PACING_SECONDS - elapsed)
+
+    # --- file (PDF) attachment handling ---
+
+    def _extract_pdf_attachments(self, msg: dict) -> list[dict]:
+        """For each PDF attached to `msg`, download it and extract text.
+
+        Returns a list of `{"name": str, "text": str}` dicts (may be empty).
+        Per-source caps (`max_files_per_msg`, `max_file_mb`, `max_pdf_text_chars`)
+        and graceful failure on network / parse errors are applied here so the
+        normalize layer just consumes ready-to-render strings.
+        """
+        files = msg.get("files") or []
+        if not files:
+            return []
+
+        max_bytes = int(self.max_file_mb * 1024 * 1024)
+        out: list[dict] = []
+        processed = 0
+
+        for f in files:
+            if processed >= self.max_files_per_msg:
+                break
+            ftype = (f.get("filetype") or "").lower()
+            mimetype = (f.get("mimetype") or "").lower()
+            if ftype != "pdf" and "pdf" not in mimetype:
+                continue
+            if f.get("mode") == "tombstone":
+                continue
+            url = f.get("url_private")
+            if not url:
+                continue  # external-storage / no direct download
+
+            size = int(f.get("size") or 0)
+            if size and size > max_bytes:
+                log.info(
+                    "Skipping PDF %r in %s (%.1f MB > %.1f MB cap)",
+                    f.get("name"), self._channel_id, size / 1024 / 1024, self.max_file_mb,
+                )
+                continue
+
+            data = self._download_file(url, max_bytes)
+            if data is None:
+                continue
+
+            from .file_parsers import extract_pdf_text
+
+            text = extract_pdf_text(data, max_chars=self.max_pdf_text_chars)
+            if text is None:
+                # Could be encrypted, image-only, or malformed — surface a placeholder
+                # so the LLM doesn't think the message has hidden content.
+                text = "[image-only or unreadable PDF — text extraction skipped]"
+            out.append({"name": f.get("name") or "attachment.pdf", "text": text})
+            processed += 1
+
+        return out
+
+    def _download_file(self, url: str, max_bytes: int) -> bytes | None:
+        """Stream a Slack-hosted file to memory with a hard byte cap. Uses the
+        same authed session as the API calls. Returns None on any failure.
+        """
+        assert self._session is not None
+        try:
+            self._pace()
+            with self._session.get(url, timeout=_TIMEOUT, stream=True) as resp:
+                self._last_call_at = time.monotonic()
+                if resp.status_code != 200:
+                    log.warning(
+                        "Slack file download %s returned %s",
+                        url[:80], resp.status_code,
+                    )
+                    return None
+                buf = bytearray()
+                for chunk in resp.iter_content(chunk_size=64 * 1024):
+                    if not chunk:
+                        continue
+                    buf.extend(chunk)
+                    if len(buf) > max_bytes:
+                        log.info("Aborting download — file exceeds %d bytes", max_bytes)
+                        return None
+                return bytes(buf)
+        except requests.RequestException as e:
+            log.warning("Slack file download failed: %s", e)
+            return None
