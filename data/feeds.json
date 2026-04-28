@@ -16,10 +16,15 @@
         {"url": "https://simonwillison.net/atom/everything/", "name": "Simon Willison"},
         {"url": "http://export.arxiv.org/rss/cs.AI", "name": "arXiv cs.AI"},
         {"url": "http://export.arxiv.org/rss/cs.CL", "name": "arXiv cs.CL"},
-        {"url": "http://export.arxiv.org/rss/cs.LG", "name": "arXiv cs.LG"}
+        {"url": "http://export.arxiv.org/rss/cs.LG", "name": "arXiv cs.LG"},
+        {"url": "https://www.cisa.gov/cybersecurity-advisories/all.xml", "name": "CISA Advisories"},
+        {"url": "https://api.msrc.microsoft.com/update-guide/rss", "name": "MSRC Update Guide"},
+        {"url": "https://seclists.org/rss/oss-sec.rss", "name": "oss-security"},
+        {"url": "https://github.blog/security/feed/", "name": "GitHub Security"},
+        {"url": "https://hnrss.org/newest?q=CVE+OR+vulnerability+OR+exploit+OR+%22prompt+injection%22", "name": "HN Security"}
       ],
       "digest": {
-        "output_type": "pdf",
+        "output_type": "slack_pdf",
         "sections": [
           {
             "name": "🗞️ General",
@@ -28,6 +33,14 @@
             "shape": "single short paragraph (3–5 sentences) that names the 2–3 biggest stories with inline `[Title](link)` cites. Prose, no bullets, no hero link. Reads like the lead column of a newsletter, not a list.",
             "min": 1,
             "max": 1
+          },
+          {
+            "name": "🔒 Security",
+            "placement": "after_tldr",
+            "when": "Anything security-shaped: CVEs and vulnerability disclosures, prompt-injection / jailbreak / data-exfiltration findings against LLMs, model-safety or misuse incidents, malicious packages or supply-chain attacks (npm/PyPI/HF), auth bypasses, credential leaks, breach reports, advisories from vendors or CERTs. Include defensive research (red-team writeups, novel attack techniques) even without a CVE.",
+            "shape": "bullet list — `- [Title](link) — <severity-or-mechanism + 8–15 word what-and-impact>`. Lead with the most severe / most actionable item. Inline a CVE id or affected product/version when present.",
+            "min": 1,
+            "max": 6
           },
           {
             "name": "🚀 Release Notes",
