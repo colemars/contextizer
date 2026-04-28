@@ -25,6 +25,7 @@ class Config:
     slack_webhook_url: str | None
     summarizer: str
     llm_command: str | None
+    llm_timeout: int
     digest_prompt_file: Path
     onboarding_prompt_file: Path
     log_level: str
@@ -68,6 +69,7 @@ def load(project_root: Path | None = None) -> Config:
         slack_webhook_url=os.environ.get("SLACK_WEBHOOK_URL") or None,
         summarizer=os.environ.get("SUMMARIZER", "stub"),
         llm_command=os.environ.get("LLM_COMMAND") or None,
+        llm_timeout=int(os.environ.get("LLM_TIMEOUT", "600")),
         digest_prompt_file=_path(root, "DIGEST_PROMPT_FILE", "templates/digest_prompt.md"),
         onboarding_prompt_file=_path(root, "ONBOARDING_PROMPT_FILE", "templates/onboarding_prompt.md"),
         log_level=os.environ.get("LOG_LEVEL", "INFO"),

@@ -11,6 +11,10 @@ from ..models import ScoredItem
 log = logging.getLogger(__name__)
 
 
+class SummarizerError(RuntimeError):
+    """Raised when the LLM summarizer cannot produce a digest body."""
+
+
 class Summarizer(Protocol):
     def summarize(self, items: list[ScoredItem], profile_text: str, prompt: str) -> str: ...
 
@@ -57,7 +61,7 @@ class StubSummarizer:
 class LLMSummarizer:
     """Pipes the rendered prompt to a local CLI (e.g. `claude -p`, `llm`, `ollama run <model>`)."""
 
-    def __init__(self, command: str, timeout: int = 120) -> None:
+    def __init__(self, command: str, timeout: int = 600) -> None:
         if not command:
             raise ValueError("LLM_COMMAND must be set for LLMSummarizer")
         self.command = command
@@ -77,23 +81,26 @@ class LLMSummarizer:
             )
         except (subprocess.TimeoutExpired, FileNotFoundError) as e:
             log.error("LLM call failed: %s", e)
-            return f"_LLM call failed: {e}_\n"
+            raise SummarizerError(f"LLM call failed: {e}") from e
 
         if result.returncode != 0:
-            log.error("LLM exited %d: %s", result.returncode, result.stderr[:500])
-            return f"_LLM call failed (exit {result.returncode})._\n\n{result.stderr}\n"
+            stderr_tail = (result.stderr or "")[-500:]
+            log.error("LLM exited %d: %s", result.returncode, stderr_tail)
+            raise SummarizerError(
+                f"LLM exited {result.returncode}: {stderr_tail}"
+            )
 
         return result.stdout.strip() + "\n"
 
 
-def build_summarizer(kind: str, llm_command: str | None) -> Summarizer:
+def build_summarizer(kind: str, llm_command: str | None, timeout: int = 600) -> Summarizer:
     kind = kind.lower()
     if kind == "stub":
         return StubSummarizer()
     if kind == "llm":
         if not llm_command:
             raise ValueError("LLM_COMMAND must be set when SUMMARIZER=llm")
-        return LLMSummarizer(llm_command)
+        return LLMSummarizer(llm_command, timeout=timeout)
     raise ValueError(f"Unknown summarizer: {kind}")
 
 

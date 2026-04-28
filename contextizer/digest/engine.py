@@ -53,7 +53,7 @@ def run_digest(
         sections=cfg.digest_sections,
     )
 
-    summarizer = build_summarizer(cfg.summarizer, cfg.llm_command)
+    summarizer = build_summarizer(cfg.summarizer, cfg.llm_command, timeout=cfg.llm_timeout)
     body = summarizer.summarize(scored, profile.text, prompt)
 
     header = _render_header(now, len(scored), len(items)) if cfg.digest_include_header else ""
